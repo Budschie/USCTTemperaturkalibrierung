@@ -1,0 +1,16 @@
+# Temp files
+*~
+\#*#
+
+# Figure data
+*.tex
+*.svg
+*.tikz
+*.fig
+*.png
+
+# Calculation garbage
+.cache
+octave-workspace
+matlab2tikz-1.1.0
+
