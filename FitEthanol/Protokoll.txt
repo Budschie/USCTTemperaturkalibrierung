@@ -1,0 +1,11 @@
+# Protokoll zu Verdunstung von VE-Wasser II (mit Styropor
+1.7. 2024
+
+m_PetrischaleStyroporOhneWasser=239.7g
+m_StyroporPetrischaleWasser=591.3g
+t_1=10:20
+t_2=12:28
+
+# Protokoll zum Ethanol-Fit
+- WP optimiert für Bereich 35.2 bis 37.2°C, WP=12.615%
+m_Gefäß=376.1g
