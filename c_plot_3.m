@@ -232,7 +232,6 @@ function visualize_difference(data_x, data_y, first_index, second_index, title_t
   title(title_text);
 endfunction
 
-
 function complete_boundary_difference_visualization
   wp = 14;
   T_1 = 26:0.1:30;
@@ -311,6 +310,14 @@ function [lin_err, min_eth_wp, max_eth_wp] = calc_linearity_error(mass, xi, n_wa
   lin_err = (diff_min > diff_max) .* diff_min + (diff_min <= diff_max) .* diff_max;
 endfunction
 
+% Maybe also add prob distribution
+function [full_error, error_without_xi] = calculate_full_error(optimal_wp, real_wp, t_min, t_max)
+  t_area = t_min:0.001:t_max;
+  median_c = median(calculate_bulk_speed_of_sound(t_area, repmat(optimal_wp, length(t_area), 1)));
+  full_error = mean(abs(calculate_bulk_speed_of_sound(t_area, repmat(real_wp, length(t_area), 1)) - median_c));
+  error_without_xi = mean(abs(calculate_bulk_speed_of_sound(t_area, repmat(optimal_wp, length(t_area), 1)) - median_c));
+endfunction
+
 function new_figure = merge_figures(figure_list, color_list, thickness_list, axes_closure)
   new_figure = figure();
 
@@ -336,6 +343,45 @@ endfunction
 function std_err = calculate_mixing_error(assumed_wp, real_wp, min_temp, max_temp)
   temps = min_temp:0.02:max_temp;
   std_err = get_standard_error(calculate_bulk_speed_of_sound(temps, repmat(real_wp * 100, length(temps), 1))', calculate_bulk_speed_of_sound(temps, repmat(assumed_wp * 100, length(temps), 1))');
+endfunction
+
+function display_mixing_error()
+  global use_cases;
+
+  for i=1:length(use_cases)
+     ethanol_wp_error_pos = calc_wrong_raw_ethanol_wp(use_cases(i).k, use_cases(i).xi_e, use_cases(i).optimal_wp / 100);
+     ethanol_wp_error_neg = calc_wrong_raw_ethanol_wp(-use_cases(i).k, use_cases(i).xi_e, use_cases(i).optimal_wp / 100);
+
+     lin_err_min = 1000;
+     lin_err_max = 0;
+
+     errors = [ethanol_wp_error_neg, ethanol_wp_error_pos];
+
+       for j = 1:length(errors)
+        [linearity_error_temp, lin_min_tmp, lin_max_tmp] = calc_linearity_error(use_cases(i).absolute_mass,
+          use_cases(i).optimal_wp / 100 + errors(j), ...
+          use_cases(i).n_water, ...
+         use_cases(i).n_ethanol, ...
+          use_cases(i).linearity);
+          % lin_err = max(linearity_error_temp, lin_err)(1);
+          lin_err_min = min(lin_err_min, lin_min_tmp);
+          lin_err_max = max(lin_err_max, lin_max_tmp);
+       endfor
+
+       [std_err_min, optimal_error] = ...
+          calculate_full_error(use_cases(i).optimal_wp, ...
+          lin_err_min * 100, ...
+          use_cases(i).min_temp, ...
+          use_cases(i).max_temp);
+
+       std_err_max = ...
+          calculate_full_error(use_cases(i).optimal_wp, ...
+          lin_err_max * 100, ...
+          use_cases(i).min_temp, ...
+          use_cases(i).max_temp);
+
+       printf("use case with %.1f to %.1f: error of %.3e compared to %.3e\n", use_cases(i).min_temp, use_cases(i).max_temp, max(std_err_min, std_err_max), optimal_error);
+  endfor
 endfunction
 
 function calculate_mixing_errors_values
